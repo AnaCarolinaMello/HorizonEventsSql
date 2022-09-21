@@ -37,11 +37,6 @@ route.get("/user/cadastroUsuario", (req,res)=>{
     res.redirect("/userLogin")
 })
 
-route.get("/logout",(req,res)=>{
-    req.session.destroy();
-    res.redirect("/userSignup")
-})
-
 //Rota para se o usuário tentar entrar direto na área de usuários
 route.get("/userPerfil", (req,res)=>{
 
