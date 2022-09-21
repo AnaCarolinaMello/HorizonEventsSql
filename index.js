@@ -269,31 +269,37 @@ app.get("/userPerfilImagem", async (req,res)=>{
 app.post("/userLoginPerfil", async(req,res,next)=>{
     var erros = []
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}'`
-    con.query(user, function (err, result) {
-        if (err) throw err;
-        if(result ==[]){
-            erros.push({texto:"Essa conta não existe"})
-            res.redirect("/userLogin")
-        }else{
+    con.query(user, function (err, result, fields) {
+        if(result.length > 0){
             localStorage.setItem('userEmail',req.body.email)
-            if(result[0].Senha = req.body.senha){
-                res.render("user/areaDoUsuario",{
-                    title: result[0].User_Name,
-                    style: "areaDoUsuario.css",
-                    email: result[0].Email,
-                    usuario: result[0].User_Name,
-                    _id: result[0].Id,
-                    fotoPerfil:  result[0].Foto_Perfil
-                })
-            
-            }else{
-                erros.push({texto:"Senha incorreta"})
-                res.render("user/loginUsuario",{
-                    title: "Entrar",
-                    style: "loginUsuario.css",
-                    erros: erros
-                })
-            }
+            let conferirSenha = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}' AND Senha='${req.body.senha}'`
+            con.query(conferirSenha, function (err, result, fields) {
+                if(result.length>0){
+                    res.render("user/areaDoUsuario",{
+                        title: result[0].User_Name,
+                        style: "areaDoUsuario.css",
+                        email: result[0].Email,
+                        usuario: result[0].User_Name,
+                        _id: result[0].Id,
+                        fotoPerfil:  result[0].Foto_Perfil
+                    })
+                
+                }else{
+                    erros.push({texto:"Senha incorreta"})
+                    res.render("user/loginUsuario",{
+                        title: "Entrar",
+                        style: "loginUsuario.css",
+                        erros: erros
+                    })
+                }
+            })
+        }else{
+            erros.push({texto:"Essa conta não existe"})
+            res.render("user/loginUsuario",{
+                title: "Entrar",
+                style: "loginUsuario.css",
+                erros: erros
+            })
         }
       });
     
@@ -315,6 +321,7 @@ app.get("/userEdit", async(req,res)=>{
             title: "Editar Perfil",
             style: "editarUsuario.css",
             telefone: telefone,
+            user_name: result[0].User_Name,
             nome: result[0].Nome,
             _id: result[0].Id,
             script: "cadastroUsuario.js"
@@ -326,6 +333,7 @@ app.post("/userEdit", async(req,res)=>{
     // Array para mensagens de erros
     var erros = []
     let nome
+    let username
     let telefone
     let senha
     let userTester
@@ -349,25 +357,33 @@ app.post("/userEdit", async(req,res)=>{
         nome = result[0].Nome
         telefone = result[0].Telefone
         senha = result[0].Senha
+        userTester = result[0].User_Name
+        username = result[0].User_Name
         if(!req.body.nome || typeof req.body.nome == undefined || req.body.nome == null){
             nome = result[0].Nome
         }else{
             nome = req.body.nome
         }
-        // if(req.body.username != null){
-        //     if(userTester !== null){
-        //         if(userTester == result[0].User_Name){
-        //             username = result[0].User_Name
-        //         }else{
-        //             erros.push({texto:"Usuário já existente"})
-        //         }
-        //     }else{
-        //         username = req.body.username
-        //     }
-
-        // }else{
-        //     username = result[0].User_Name
-        // }
+        if(!req.body.username || typeof req.body.username == undefined || req.bodyusername == null){
+            username = result[0].User_Name
+        }else{
+            let testeUser = `SELECT* FROM Usuario_Cliente`
+            con.query(testeUser, function (err, result) {
+                if (err) throw err;
+                console.log(result.affectedRows + " record(s) updated");
+                result.forEach(value => {
+                    if(value.User_Name == req.body.username){
+                        if(userTester == value.User_Name){
+                            username = req.body.username
+                        }else{
+                            erros.push({texto:"Usuário já existente"})
+                        }
+                    }else{
+                        username = req.body.username
+                    }
+                });
+            });
+        }
         if(!req.body.telefone || typeof req.body.telefone == undefined || req.body.telefone == null){
             if(result[0].Telefone == undefined){
                 telefone = ''
@@ -421,7 +437,14 @@ app.post("/userEdit", async(req,res)=>{
                     console.log(result.affectedRows + " record(s) updated");
                 });
             }
-            if(senha == undefined && telefone == undefined && nome == undefined){
+            if(username !== undefined){
+                let userNameUpdate = `UPDATE Usuario_Cliente SET User_Name = '${username}' WHERE Email='${email}'`
+                con.query(userNameUpdate, function (err, result) {
+                    if (err) throw err;
+                    console.log(result.affectedRows + " record(s) updated");
+                });
+            }
+            if(senha == undefined && telefone == undefined && nome == undefined && username == undefined){
                 console.log("Nenhum dado alterado")
             }
             
