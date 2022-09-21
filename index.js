@@ -339,7 +339,6 @@ app.post("/userEdit", async(req,res)=>{
     let userTester
 
     let email = localStorage.getItem('userEmail')
-    console.log(email)
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     //Verificação se a senha e sua confirmação batem
     if(req.body.senha != req.body.confirme_senha){
@@ -353,7 +352,6 @@ app.post("/userEdit", async(req,res)=>{
     // });
     con.query(user, async function (err, result) {
         if (err) throw err;
-        console.log(result)
         nome = result[0].Nome
         telefone = result[0].Telefone
         senha = result[0].Senha
@@ -370,11 +368,12 @@ app.post("/userEdit", async(req,res)=>{
             let testeUser = `SELECT* FROM Usuario_Cliente`
             con.query(testeUser, function (err, result) {
                 if (err) throw err;
-                console.log(result.affectedRows + " record(s) updated");
+                console.log('teste')
                 result.forEach(value => {
                     if(value.User_Name == req.body.username){
                         if(userTester == value.User_Name){
                             username = req.body.username
+                            console.log("opa")
                         }else{
                             erros.push({texto:"Usuário já existente"})
                         }
