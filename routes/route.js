@@ -22,14 +22,16 @@ route.get("/userSignup", (req,res)=>{
 route.get("/userLogin", (req,res)=>{
     res.render("user/loginUsuario",{
         title: "Entrar",
-        style: "loginUsuario.css"
+        style: "loginUsuario.css",
+        script: "setErroMgs.js"
     })
 })
 
 route.post("/userLogin", (req,res)=>{
     res.render("user/loginUsuario",{
         title: "Entrar",
-        style: "loginUsuario.css"
+        style: "loginUsuario.css",
+        script: "setErroMgs.js"
     })
 })
 
