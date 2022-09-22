@@ -7,7 +7,6 @@ connect-flash@0.1.1<br>
 express-handlebars@6.0.6<br>
 express-session@1.17.3<br>
 express@4.18.1<br>
-mongoose@6.6.1<br>
 node@18.9.0<br>
 nodemon@2.0.19<br>
 passport-local@1.0.0<br>
