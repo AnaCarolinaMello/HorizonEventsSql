@@ -22,8 +22,9 @@ const localStorage = require('localStorage');
 const { encode, decode } = require("punycode");
 const cookieParser = require("cookie-parser");
 const oneDay = 1000 * 60 * 60 * 24
-var sessao;
-// const sessionStorage = require('sto')
+const sessionStorage = require('sessionstorage-for-nodejs')
+const { promisify } = require('util')
+const unlinkAsync = promisify(fs.unlink)
 
 app.use("/",route)
 
@@ -146,105 +147,124 @@ app.post("/userPerfil", async (req,res)=>{
 
         erros.push({texto:"Senhas incompatíveis"})
     }
-
     //Verificando se existem erros
     if(erros.length == 0){
         var email = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}'`
-        var username = `SELECT* FROM Usuario_Cliente WHERE User_Name='${req.body.email}'`
-        console.log(email)
-        con.query(email, function (err, result, fields) {
+        var username = `SELECT* FROM Usuario_Cliente WHERE User_Name='${req.body.username}'`
+        con.query(email, async function (err, result, fields) {
             if (err) throw err;
             console.log(result);
-            if(result == []){
-                con.query(username, function (err, result, fields) {
-                    if (err) throw err;
-                    console.log(result);
-                    if(result == []){
-                        erros.push({texto:"Email e nome de usuário já cadastrados"})
-                        res.render("user/cadastroUsuario",{
-                        title: "Cadastro",
-                        style: "cadastrousuario.css",
-                        erros: erros})
-                    }else{
-                        erros.push({texto:"Email já cadastrado"})
-                        res.render("user/cadastroUsuario",{
-                            title: "Cadastro",
-                            style: "cadastrousuario.css",
-                            erros: erros
-                        })
-                    }
-                });
-            }else{
-                con.query(username, function (err, result, fields) {
-                    if (err) throw err;
-                    console.log(result);
-                    if(result == []){
+            if(result.length > 0){
+                
+                erros.push({texto:"Email já cadastrado"})
+                con.query(username, async function (err, resultado, fields) {
+                    if(resultado.length > 0){
                         erros.push({texto:"Nome de usuário já cadastrado"})
                         res.render("user/cadastroUsuario",{
                             title: "Cadastro",
                             style: "cadastrousuario.css",
-                            erros: erros
+                            erros: erros,
+                            nome_erro: req.body.nome,
+                            telefone_erro: req.body.telefone,
+                            script: "cadastroUsuario.js"
                         })
                     }else{
-                        let senha = req.body.senha
-                        var sql = `INSERT INTO Usuario_Cliente (Nome, User_Name,Email,Telefone,Foto_Perfil,Senha) VALUES ('${req.body.nome}','${req.body.username}','${req.body.email}','${req.body.telefone}','/img/profile.jpg','${senha}')`;
+                        res.render("user/cadastroUsuario",{
+                            title: "Cadastro",
+                            style: "cadastrousuario.css",
+                            erros: erros,
+                            nome_erro: req.body.nome,
+                            telefone_erro: req.body.telefone,
+                            username_erro: req.body.username,
+                            script: "cadastroUsuario.js"
+                        })
+                    }
+                })      
+            }else{
+                con.query(username, async function (err, resultado, fields) {
+                    if(resultado.length > 0){
+                        erros.push({texto:"Nome de usuário já cadastrado"})
+                        res.render("user/cadastroUsuario",{
+                            title: "Cadastro",
+                            style: "cadastrousuario.css",
+                            erros: erros,
+                            nome_erro: req.body.nome,
+                            telefone_erro: req.body.telefone,
+                            email_erro: req.body.email,
+                            script: "cadastroUsuario.js"
+                        })
+                    }else{
+                        const salt =await bcrypt.genSaltSync(10)
+                        const senha = await req.body.senha
+                        let senhaFinal = bcrypt.hashSync(senha, salt)
+                        var sql = `INSERT INTO Usuario_Cliente (Nome, User_Name,Email,Telefone,Foto_Perfil,Senha) VALUES ('${req.body.nome}','${req.body.username}','${req.body.email}','${req.body.telefone}','/imgNative/profile.jpg','${senhaFinal}')`;
                         localStorage.setItem('userEmail',req.body.email)
                         con.query(sql, function (err, result) {
                             if (err) throw err;
                             console.log("Usuário adicionado com sucesso");
+                        });
+                        con.query(email, function(err,result){
                             res.render("user/areaDoUsuario",{
                                 title: req.body.username,
                                 style: "areaDoUsuario.css",
                                 email: req.body.email,
                                 usuario: req.body.username,
-                                fotoPerfil: '/img/profile.jpg' 
+                                _id: result[0].Id,
+                                fotoPerfil: '/imgNative/profile.jpg' 
                             })
-                        });
+                        })
                     }
-                  });
-                }
-          });
-        
-        
+                })
+            }
+        });    
     }else{
         res.render("user/cadastroUsuario",{
             title: "Cadastro",
             style: "cadastrousuario.css",
-            erros: erros
+            erros: erros,
+            script: "cadastroUsuario.js",
+            nome_erro: req.body.nome,
+            telefone_erro: req.body.telefone,
+            username_erro: req.body.username,
+            email_erro: req.body.email
         })
     }
-//     con.query(email, function (err, result) {
-//         if (err) throw err;
-//         idExibir = result[0].Id
-//       });
 })
 
 // //Tentativa de dar um upload em imagens no banco de dados
 app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
     var id = req.params.id
-    var user = `UPDATE Usuario_Cliente SET Foto_Perfil= '/img/${req.file.originalname}' WHERE Id='${id}'`
-    con.query(user, function (err, result) {
-        if (err) throw err;
-        console.log(result);
-        if(result == []){
+    var format = /[!@#$%^&*()_+\-=\[\]{};':"\\|,<>\/?]+/;
+
+    if(format.test(req.file.originalname)){
+
+        await unlinkAsync(`public/img/${req.file.originalname}`)
+        console.log("Imagem fora do padrão permitido")
+        res.redirect("/userPerfilImagem")
+  
+    } else {
+        var user = `UPDATE Usuario_Cliente SET Foto_Perfil= '/img/${req.file.originalname}' WHERE Id='${id}'`
+        con.query(user, function (err, result) {
+            if (err) throw err;
+            if(result.length = 0){
             console.log("Erro ao salvar imagem")
             res.redirect("/userPerfilImagem")
-        }else{
-            imagemExibir = `/img/${req.file.originalname}`
-            console.log("Imagem salva com sucesso")
-            res.redirect("/userPerfilImagem")
-        }
+            }else{
+                imagemExibir = `/img/${req.file.originalname}`
+                console.log("Imagem salva com sucesso")
+                res.redirect("/userPerfilImagem")
+            }
       });
+        
+    }
 })
 
 app.get("/userPerfilImagem", async (req,res)=>{
     let erros = []
     let email = localStorage.getItem('userEmail')
-      console.log(email)
     if(email != null){
     let user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     con.query(user, function (err, result) {
-        console.log(result)
         if (err) throw err;
         res.render("user/areaDoUsuario",{
             title: result[0].User_Name,
@@ -256,7 +276,7 @@ app.get("/userPerfilImagem", async (req,res)=>{
         })
     })
     }else{
-        erros.push({texto:"Erro, entre novamente mais tarde"})
+        erros.push({texto:"Erro insperado, entre novamente mais tarde"})
         res.render("user/loginUsuario",{
             title: "Entrar",
             style: "loginUsuario.css",
@@ -269,30 +289,28 @@ app.get("/userPerfilImagem", async (req,res)=>{
 app.post("/userLoginPerfil", async(req,res,next)=>{
     var erros = []
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}'`
-    con.query(user, function (err, result, fields) {
+    con.query(user, async function (err, result, fields) {
         if(result.length > 0){
             localStorage.setItem('userEmail',req.body.email)
-            let conferirSenha = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}' AND Senha='${req.body.senha}'`
-            con.query(conferirSenha, function (err, result, fields) {
-                if(result.length>0){
-                    res.render("user/areaDoUsuario",{
-                        title: result[0].User_Name,
-                        style: "areaDoUsuario.css",
-                        email: result[0].Email,
-                        usuario: result[0].User_Name,
-                        _id: result[0].Id,
-                        fotoPerfil:  result[0].Foto_Perfil
-                    })
-                
-                }else{
-                    erros.push({texto:"Senha incorreta"})
-                    res.render("user/loginUsuario",{
-                        title: "Entrar",
-                        style: "loginUsuario.css",
-                        erros: erros
-                    })
-                }
-            })
+            let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
+            if(senha){
+                res.render("user/areaDoUsuario",{
+                    title: result[0].User_Name,
+                    style: "areaDoUsuario.css",
+                    email: result[0].Email,
+                    usuario: result[0].User_Name,
+                    _id: result[0].Id,
+                    fotoPerfil:  result[0].Foto_Perfil
+                })
+            }else{
+                erros.push({texto:"Senha incorreta"})
+                res.render("user/loginUsuario",{
+                    title: "Entrar",
+                    style: "loginUsuario.css",
+                    erros: erros,
+                    emailErro: result[0].Email
+                })
+            }
         }else{
             erros.push({texto:"Essa conta não existe"})
             res.render("user/loginUsuario",{
@@ -309,25 +327,29 @@ app.get("/userEdit", async(req,res)=>{
 
     let email = localStorage.getItem('userEmail')
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
-    con.query(user, function (err, result) {
-        if (err) throw err;
-        let telefone
-        if(result[0].Telefone == undefined){
-            telefone = ""
-        }else{
-            telefone = result[0].Telefone
-        }
-        res.render("user/editarUsuario",{
-            title: "Editar Perfil",
-            style: "editarUsuario.css",
-            telefone: telefone,
-            user_name: result[0].User_Name,
-            nome: result[0].Nome,
-            _id: result[0].Id,
-            script: "cadastroUsuario.js"
-        })
-      });
-    })
+    if(email){
+        con.query(user, function (err, result) {
+            if (err) throw err;
+            let telefone
+            if(result[0].Telefone == undefined){
+                telefone = ""
+            }else{
+                telefone = result[0].Telefone
+            }
+            res.render("user/editarUsuario",{
+                title: "Editar Perfil",
+                style: "editarUsuario.css",
+                telefone: telefone,
+                user_name: result[0].User_Name,
+                nome: result[0].Nome,
+                _id: result[0].Id,
+                script: "cadastroUsuario.js"
+            })
+          });
+    }else{
+        res.redirect('/userSignup')//Mudar para index depois
+    }
+})
 app.post("/userEdit", async(req,res)=>{
 
     // Array para mensagens de erros
@@ -336,134 +358,147 @@ app.post("/userEdit", async(req,res)=>{
     let username
     let telefone
     let senha
-    let userTester
+    let userTester = []
 
-    let email = localStorage.getItem('userEmail')
-    var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
-    //Verificação se a senha e sua confirmação batem
     if(req.body.senha != req.body.confirme_senha){
 
         erros.push({texto:"Senhas incompatíveis"})
     }
-    // con.query(userNameConfirm, function (err, resultado) {
-    //     if (err) throw err;
-    //     userTester = resultado[0].User_Name
-    
-    // });
-    con.query(user, async function (err, result) {
-        if (err) throw err;
-        nome = result[0].Nome
-        telefone = result[0].Telefone
-        senha = result[0].Senha
-        userTester = result[0].User_Name
-        username = result[0].User_Name
-        if(!req.body.nome || typeof req.body.nome == undefined || req.body.nome == null){
-            nome = result[0].Nome
-        }else{
-            nome = req.body.nome
-        }
-        if(!req.body.username || typeof req.body.username == undefined || req.bodyusername == null){
-            username = result[0].User_Name
-        }else{
-            let testeUser = `SELECT* FROM Usuario_Cliente`
+
+    let email = localStorage.getItem('userEmail')
+    var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
+    let testeUser = `SELECT* FROM Usuario_Cliente`
             con.query(testeUser, function (err, result) {
                 if (err) throw err;
                 console.log('teste')
                 result.forEach(value => {
-                    if(value.User_Name == req.body.username){
-                        if(userTester == value.User_Name){
-                            username = req.body.username
-                            console.log("opa")
+                 userTester.push(value.User_Name)
+
+            });
+            con.query(user, async function (err, result) {
+                if (err) throw err;
+                if(!req.body.nome || typeof req.body.nome == undefined || req.body.nome == null){
+                    nome = undefined
+                }else{
+                    if(result[0].Nome == req.body.nome){
+                        nome = undefined
+                    }else{
+                        nome = req.body.nome
+                    }
+                }
+                if(!req.body.username || typeof req.body.username == undefined || req.body.username == null){
+                    username = undefined
+                }else{
+                    console.log(userTester)
+                    userTester.forEach((value)=>{
+                        //console.log("entrou foreach")
+                        console.log(value)
+                        if(value == req.body.username){
+                            if(result[0].User_Name == req.body.username){
+                                username = undefined
+                            }else{
+                                erros.push({texto:"Usuário já existente"})
+                                console.log("erro")
+                            }
                         }else{
-                            erros.push({texto:"Usuário já existente"})
+                            if(result[0].User_Name == req.body.username){
+                                username = undefined
+                            }else{
+                                username = req.body.username
+                            }
+                        }
+                    })
+                }
+                if(!req.body.telefone || typeof req.body.telefone == undefined || req.body.telefone == null){
+                    if(result[0].Telefone == undefined){
+                        telefone = undefined
+                    }else{
+                        telefone = undefined
+                    }
+                }else{
+                    if(result[0].Telefone == req.body.telefone){
+                        telefone = undefined
+                    }else{
+                        telefone = req.body.telefone
+                    }
+                }
+                if(!req.body.senha || typeof req.body.senha == undefined || req.body.senha == null || !req.body.confirme_senha || typeof req.body.confirme_senha == undefined || req.body.confirme_senha == null){
+                    if(result[0].Senha == undefined){
+                        erros.push({texto:"Erro ao atualizar dados, tente novamente mais tarde"})
+                    }else{
+                        senha = undefined
+                    }
+                }else{
+                    let senhaConferir = await bcrypt.compare(req.body.senha_ant, result[0].Senha)
+                    if(senhaConferir){
+                        if(req.body.senha.length > 32){
+                            erros.push({texto:"Senha precisa conter menos de 32 caracteres"})
+                    
+                        //Verificação se a variável tem mais de 8 caractere
+                        }else if(req.body.senha.length < 8){
+                            erros.push({texto:"Senha precisa conter, no mínimo, 8 caracteres"})
+                        }else{
+                            const salt =await bcrypt.genSaltSync(10)
+                            const senhaHash = await req.body.senha
+                            senha = bcrypt.hashSync(senhaHash, salt)
                         }
                     }else{
-                        username = req.body.username
+                        erros.push({texto:"Senha antiga incorreta"})
                     }
-                });
-            });
-        }
-        if(!req.body.telefone || typeof req.body.telefone == undefined || req.body.telefone == null){
-            if(result[0].Telefone == undefined){
-                telefone = ''
-            }else{
-                telefone = result[0].Telefone
-            }
-        }else{
-            telefone = req.body.telefone
-        }
-        console.log(result[0].Senha)
-        if(!req.body.senha || typeof req.body.senha == undefined || req.body.senha == null || !req.body.confirme_senha || typeof req.body.confirme_senha == undefined || req.body.confirme_senha == null){
-            if(result[0].Senha == undefined){
-                erros.push({texto:"Erro ao atualizar dados, tente novamente mais tarde"})
-            }else{
-                senha = result[0].Senha
-            }
-        }else{
-            if(req.body.senha_ant == result[0].Senha){
-                if(req.body.senha.length > 32){
-                    erros.push({texto:"Senha precisa conter menos de 32 caracteres"})
-            
-                //Verificação se a variável tem mais de 8 caractere
-                }else if(req.body.senha.length < 8){
-                    erros.push({texto:"Senha precisa conter, no mínimo, 8 caracteres"})
-                }else{
-                    senha = req.body.senha
                 }
-            }else{
-                erros.push({texto:"Senha antiga incorreta"})
-            }
-        }
-        if(erros.length == 0){
-            if(nome !== undefined){
-                let nomeUpdate = `UPDATE Usuario_Cliente SET Nome = '${nome}' WHERE Email='${email}'`
-                con.query(nomeUpdate, function (err, result) {
-                    if (err) throw err;
-                    console.log(result.affectedRows + " record(s) updated");
-                });
-            }
-            if(telefone != undefined){
-                let telefoneUpdate = `UPDATE Usuario_Cliente SET Telefone = '${telefone}' WHERE Email='${email}'`
-                con.query(telefoneUpdate, function (err, result) {
-                    if (err) throw err;
-                    console.log(result.affectedRows + " record(s) updated");
-                });
-            }
-            if(senha != undefined){
-                let senhaUpdate = `UPDATE Usuario_Cliente SET Senha = '${senha}' WHERE Email='${email}'`
-                con.query(senhaUpdate, function (err, result) {
-                    if (err) throw err;
-                    console.log(result.affectedRows + " record(s) updated");
-                });
-            }
-            if(username !== undefined){
-                let userNameUpdate = `UPDATE Usuario_Cliente SET User_Name = '${username}' WHERE Email='${email}'`
-                con.query(userNameUpdate, function (err, result) {
-                    if (err) throw err;
-                    console.log(result.affectedRows + " record(s) updated");
-                });
-            }
-            if(senha == undefined && telefone == undefined && nome == undefined && username == undefined){
-                console.log("Nenhum dado alterado")
-            }
-            
-            res.redirect('/userPerfilImagem')
-        }else{
-            res.render("user/editarUsuario",{
-                title: "Editar Perfil",
-                style: "editarUsuario.css",
-                erros: erros,
-                nome: nome,
-                telefone: telefone,
-                script: "cadastroUsuario.js"
-            })
-        }
-
-    });
+                if(erros.length == 0){
+                    if(nome !== undefined){
+                        let nomeUpdate = `UPDATE Usuario_Cliente SET Nome = '${nome}' WHERE Email='${email}'`
+                        con.query(nomeUpdate, function (err, result) {
+                            if (err) throw err;
+                            console.log(result.affectedRows + " Nome updated ");
+                        });
+                    }
+                    if(telefone != undefined){
+                        let telefoneUpdate = `UPDATE Usuario_Cliente SET Telefone = '${telefone}' WHERE Email='${email}'`
+                        con.query(telefoneUpdate, function (err, result) {
+                            if (err) throw err;
+                            console.log(result.affectedRows + " Telefone updated");
+                        });
+                    }
+                    if(senha != undefined){
+                        let senhaUpdate = `UPDATE Usuario_Cliente SET Senha = '${senha}' WHERE Email='${email}'`
+                        con.query(senhaUpdate, function (err, result) {
+                            if (err) throw err;
+                            console.log(result.affectedRows + " Senha updated");
+                        });
+                    }
+                    if(username !== undefined){
+                        let userNameUpdate = `UPDATE Usuario_Cliente SET User_Name = '${username}' WHERE Email='${email}'`
+                        con.query(userNameUpdate, function (err, result) {
+                            if (err) throw err;
+                            console.log(result.affectedRows + " User_Name updated");
+                        });
+                    }
+                    if(senha == undefined && telefone == undefined && nome == undefined && username == undefined){
+                        console.log("Nenhum dado alterado")
+                    }
+                    
+                    res.redirect('/userPerfilImagem')
+                }else{
+                    res.render("user/editarUsuario",{
+                        title: "Editar Perfil",
+                        style: "editarUsuario.css",
+                        erros: erros,
+                        nome: nome,
+                        user_name: username,
+                        telefone: telefone,
+                        script: "cadastroUsuario.js"
+                    })
+                }
+        
+            });
+        })
+    
 })
 
 app.get("/logout",(req,res)=>{
     req.session.destroy();
     localStorage.removeItem('userEmail')
-    res.redirect("/userSignup")
+    res.redirect("/userSignup")//Mudar para index depois
 })
