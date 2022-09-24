@@ -6,9 +6,9 @@ Id int unsigned auto_increment not null,
 Nome varchar(80) not null,
 User_Name varchar(80) not null,
 Email varchar(80) not null,
-Telefone char(13),
-Foto_Perfil blob,
-Senha varchar(100) not null,
+Telefone char(15),
+Foto_Perfil  varchar(80),
+Senha varchar(90) not null,
 Primary key(Id)
 )Engine=INNODB;
 
@@ -29,7 +29,7 @@ Bairro varchar(80) not null,
 Cidade varchar(80) not null,
 UF char(2) not null,
 CEP char(10) not null,
-Senha char(32) not null,
+Senha varchar(100) not null,
 primary key(CNPJ)
 )Engine=INNODB;
 
@@ -41,4 +41,3 @@ primary key(id),
 foreign key(Usuario_Id) references Usuario_Cliente(Id),
 foreign key(Empresa_CNPJ) references Usuario_Empresa(CNPJ)
 )Engine=INNODB;
-
