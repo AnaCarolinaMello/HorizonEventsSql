@@ -9,6 +9,7 @@ const port = 3000;
 const route = require("./routes/route")
 const mongoose = require('mongoose')
 const handlebars = require("handlebars");
+const exphs = require('express-handlebars')    
 const session = require('express-session')
 const flash = require('connect-flash')
 const formidable = require('formidable')
@@ -30,7 +31,6 @@ app.use("/",route)
 
 app.engine('handlebars',engine());
 app.set('view engine', 'handlebars');
-// handlebars.registerPartial('_msg','.handlebars');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json())
@@ -133,9 +133,9 @@ app.post("/userPerfil", async (req,res)=>{
     }else if(req.body.senha.length > 32){
         erros.push({texto:"Senha precisa conter menos de 32 caracteres"})
 
-    //Verificação se a variável tem mais de 8 caractere
+    //Verificação se a variável tem mais de 8 caractere 
     }else if(req.body.senha.length < 8){
-        erros.push({texto:"Senha precisa conter, no mínimo, 8 caracteres"})
+        erros.push({texto:"Senha precisa conter 8 caracteres no mínimo"})
     }
 
     //Verificação se a variável é vazia
@@ -203,6 +203,7 @@ app.post("/userPerfil", async (req,res)=>{
                             if (err) throw err;
                             console.log("Usuário adicionado com sucesso");
                         });
+                        req.flash("success_mgs","Entrou")
                         con.query(email, function(err,result){
                             res.render("user/areaDoUsuario",{
                                 title: req.body.username,
@@ -250,7 +251,6 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
             console.log("Erro ao salvar imagem")
             res.redirect("/userPerfilImagem")
             }else{
-                imagemExibir = `/img/${req.file.originalname}`
                 console.log("Imagem salva com sucesso")
                 res.redirect("/userPerfilImagem")
             }
@@ -436,7 +436,7 @@ app.post("/userEdit", async(req,res)=>{
                     
                         //Verificação se a variável tem mais de 8 caractere
                         }else if(req.body.senha.length < 8){
-                            erros.push({texto:"Senha precisa conter, no mínimo, 8 caracteres"})
+                            erros.push({texto:"Senha precisa conter 8 caracteres no mínimo"})
                         }else{
                             const salt =await bcrypt.genSaltSync(10)
                             const senhaHash = await req.body.senha
