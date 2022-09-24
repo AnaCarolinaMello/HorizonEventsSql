@@ -13,3 +13,4 @@ passport-local@1.0.0<br>
 passport@0.6.0<br>
 localStorage@1.0.4<br>
 cookie-parser@1.4.6<br>
+multer<br>
