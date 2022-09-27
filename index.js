@@ -21,6 +21,7 @@ const oneDay = 1000 * 60 * 60 * 24
 const sessionStorage = require('sessionstorage-for-nodejs')
 const { promisify } = require('util')
 const unlinkAsync = promisify(fs.unlink)
+const cors = require('cors')
 
 app.use("/",route)
 
@@ -43,6 +44,8 @@ app.use(session({
 }))
 
 app.use(cookieParser());
+
+app.use(cors())
 
 // //Inicianização do passport para autentificação
 // app.use(passport.initialize())
@@ -91,7 +94,7 @@ app.listen(port, err =>{
 // //Passando para uma variável o modelo da collection
 // const User_Cliente = mongoose.model("Usuario_Cliente")
 
-app.post("/userPerfil", async (req,res)=>{
+app.post("/userSignup", async (req,res)=>{
 
     // Array para mensagens de erros
     var erros = []
@@ -198,17 +201,8 @@ app.post("/userPerfil", async (req,res)=>{
                             if (err) throw err;
                             console.log("Usuário adicionado com sucesso");
                         });
-                        req.flash("success_mgs","Entrou")
-                        con.query(email, function(err,result){
-                            res.render("user/areaDoUsuario",{
-                                title: req.body.username,
-                                style: "areaDoUsuario.css",
-                                email: req.body.email,
-                                usuario: req.body.username,
-                                _id: result[0].Id,
-                                fotoPerfil: '/imgNative/profile.jpg' 
-                            })
-                        })
+                        req.flash("success_mgs","Usuário Cadastrado com sucesso")
+                        res.redirect("/userPerfil")
                     }
                 })
             }
@@ -235,26 +229,29 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
     if(format.test(req.file.originalname)){
 
         await unlinkAsync(`public/img/${req.file.originalname}`)
+        req.flash("error_mgs","Imagem fora do padrão permitido")
         console.log("Imagem fora do padrão permitido")
-        res.redirect("/userPerfilImagem")
+        res.redirect("/userPerfil")
   
     } else {
         var user = `UPDATE Usuario_Cliente SET Foto_Perfil= '/img/${req.file.originalname}' WHERE Id='${id}'`
         con.query(user, function (err, result) {
             if (err) throw err;
             if(result.length = 0){
+            req.flash("error_mgs","Erro ao atualizar foto de perfil")
             console.log("Erro ao salvar imagem")
-            res.redirect("/userPerfilImagem")
+            res.redirect("/userPerfil")
             }else{
+                req.flash("success_mgs","Foto de perfil atualizada")
                 console.log("Imagem salva com sucesso")
-                res.redirect("/userPerfilImagem")
+                res.redirect("/userPerfil")
             }
       });
         
     }
 })
 
-app.get("/userPerfilImagem", async (req,res)=>{
+app.get("/userPerfil", async (req,res)=>{
     let erros = []
     let email = localStorage.getItem('userEmail')
     if(email != null){
@@ -281,7 +278,7 @@ app.get("/userPerfilImagem", async (req,res)=>{
 })
 
 // //Rota de autentificação do login
-app.post("/userLoginPerfil", async(req,res,next)=>{
+app.post("/userLogin", async(req,res,next)=>{
     var erros = []
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}'`
     con.query(user, async function (err, result, fields) {
@@ -300,14 +297,7 @@ app.post("/userLoginPerfil", async(req,res,next)=>{
             // }
             let senha = bcrypt.compare(req.body.senha, result[0].Senha)
             if(senha){
-                res.render("user/areaDoUsuario",{
-                    title: result[0].User_Name,
-                    style: "areaDoUsuario.css",
-                    email: result[0].Email,
-                    usuario: result[0].User_Name,
-                    _id: result[0].Id,
-                    fotoPerfil:  result[0].Foto_Perfil
-                })
+                res.redirect('/userPerfil')
             }else{
                 erros.push({texto:"Senha incorreta"})
                 res.render("user/loginUsuario",{
@@ -485,7 +475,7 @@ app.post("/userEdit", async(req,res)=>{
                         console.log("Nenhum dado alterado")
                     }
                     
-                    res.redirect('/userPerfilImagem')
+                    res.redirect('/userPerfil')
                 }else{
                     res.render("user/editarUsuario",{
                         title: "Editar Perfil",
