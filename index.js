@@ -4,15 +4,10 @@ const app = express()
 const {engine} = require('express-handlebars')
 const bodyParser = require('body-parser')
 const path = require('path')
-const http = require('http')
 const port = 3000;
-const route = require("./routes/route")
-const mongoose = require('mongoose')
-const handlebars = require("handlebars");
-const exphs = require('express-handlebars')    
+const route = require("./routes/route") 
 const session = require('express-session')
 const flash = require('connect-flash')
-const formidable = require('formidable')
 const fs = require('fs')
 const bcrypt = require('bcryptjs')
 const passport = require('passport')
@@ -20,7 +15,7 @@ require("./config/auth")(passport)
 const multer = require('multer');
 require('dotenv/config');
 const localStorage = require('localStorage');
-const { encode, decode } = require("punycode");
+const emailValid = require('deep-email-validator')
 const cookieParser = require("cookie-parser");
 const oneDay = 1000 * 60 * 60 * 24
 const sessionStorage = require('sessionstorage-for-nodejs')
@@ -292,7 +287,18 @@ app.post("/userLoginPerfil", async(req,res,next)=>{
     con.query(user, async function (err, result, fields) {
         if(result.length > 0){
             localStorage.setItem('userEmail',req.body.email)
-            let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
+            async function EmailValido(email){
+                return emailValid.validate(email)
+            }
+            // const emailConf = await EmailValido(req.body.email)
+            // if(emailConf.valid){
+            //     console.log("true")
+            // }else{
+            //     console.log(emailConf.valid)
+            //     console.log(emailConf.reason)
+            //     console.log(emailConf.validators)
+            // }
+            let senha = bcrypt.compare(req.body.senha, result[0].Senha)
             if(senha){
                 res.render("user/areaDoUsuario",{
                     title: result[0].User_Name,
@@ -485,9 +491,9 @@ app.post("/userEdit", async(req,res)=>{
                         title: "Editar Perfil",
                         style: "editarUsuario.css",
                         erros: erros,
-                        nome: nome,
-                        user_name: username,
-                        telefone: telefone,
+                        nome: req.body.nome,
+                        user_name: req.body.username,
+                        telefone: req.body.telefone,
                         script: "cadastroUsuario.js"
                     })
                 }
