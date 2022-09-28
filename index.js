@@ -487,19 +487,3 @@ app.get("/logout",(req,res)=>{
     localStorage.removeItem('userEmail')
     res.redirect("/userSignup")//Mudar para index depois
 })
-
-app.get('/search', function(req, res) {
-    res.render("search/search")
-    con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
-    function(err, rows, fields) {
-    if (err) throw err;
-    var data = [];
-    for (i = 0; i < rows.length; i++) {
-    data.push({username: rows.User_Name});
-    }
-            console.log(data)
-            res.render("search/search",{
-                data: data
-            })
-        });
-    });
