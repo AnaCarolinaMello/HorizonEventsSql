@@ -15,7 +15,6 @@ require("./config/auth")(passport)
 const multer = require('multer');
 require('dotenv/config');
 const localStorage = require('localStorage');
-const emailValid = require('deep-email-validator')
 const cookieParser = require("cookie-parser");
 const oneDay = 1000 * 60 * 60 * 24
 const sessionStorage = require('sessionstorage-for-nodejs')
@@ -284,18 +283,8 @@ app.post("/userLogin", async(req,res,next)=>{
     con.query(user, async function (err, result, fields) {
         if(result.length > 0){
             localStorage.setItem('userEmail',req.body.email)
-            async function EmailValido(email){
-                return emailValid.validate(email)
-            }
-            // const emailConf = await EmailValido(req.body.email)
-            // if(emailConf.valid){
-            //     console.log("true")
-            // }else{
-            //     console.log(emailConf.valid)
-            //     console.log(emailConf.reason)
-            //     console.log(emailConf.validators)
-            // }
-            let senha = bcrypt.compare(req.body.senha, result[0].Senha)
+            let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
+            console.log(senha)
             if(senha){
                 res.redirect('/userPerfil')
             }else{
@@ -313,11 +302,11 @@ app.post("/userLogin", async(req,res,next)=>{
                 title: "Entrar",
                 style: "loginUsuario.css",
                 erros: erros
-            })
-        }
-      });
-    
+        })
+    }
+});
 })
+    
 
 app.get("/userEdit", async(req,res)=>{
 
@@ -498,3 +487,19 @@ app.get("/logout",(req,res)=>{
     localStorage.removeItem('userEmail')
     res.redirect("/userSignup")//Mudar para index depois
 })
+
+app.get('/search', function(req, res) {
+    res.render("search/search")
+    con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
+    function(err, rows, fields) {
+    if (err) throw err;
+    var data = [];
+    for (i = 0; i < rows.length; i++) {
+    data.push({username: rows.User_Name});
+    }
+            console.log(data)
+            res.render("search/search",{
+                data: data
+            })
+        });
+    });
