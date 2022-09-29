@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300&display=swap');
+
+
+body{
+    height: 100vh;
+    background: linear-gradient(to bottom right, #e7e6e6 4%, #c5c5c5 37%, #999999 100%);  
+    font-family: 'Source Sans Pro', sans-serif;
+    margin: 0;
+}
+
+#navbar{
+    position: absolute;
+    width: 100%;
+}
+
+#container{
+    position: absolute;
+    height: auto;
+    width: 70%;
+    background-color: white;
+    display: grid;
+    grid-template-columns: 1fr 4fr 0.5fr;
+    grid-template-rows: auto;
+    border-radius: 6px;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    z-index: 2;
+}
+
+/* formataçao da área de exibição e seleção de imagem */
+#formImagem{
+    display: grid;
+    align-items: center;
+}
+
+#foto{
+    text-align: center;
+}
+
+#imagem{
+    width: 150px;
+    height: 150px;
+    border: 1px solid lightgray;
+    border-radius: 100%;
+    margin: 2vh 0vh 1.4vh 2vh;
+}
+
+#confirmarIMG{
+    margin: 1vh 1vh 1vh 2vh;
+}
+
+#inputFile{
+    display: none;
+}
+
+#lblInputFile{
+    margin: 0vh 1vh 0.5vh 2vh;
+    border: 1px solid lightgray;
+    border-radius: 6px;
+    padding: 2.5px;
+    background-color: #50aaff;
+    text-align: center;
+}
+
+#lblInputFile:hover{
+    transform: scale(1.1);
+    background-color: #499be7;
+}
+
+#fotoDePerfil{
+    width: 150px;
+    height: 150px;
+    border-radius: 100%;
+    border: 1px solid black;
+    transform: translate(-50%,-50%);
+}
+
+/* formatação dos dados */
+#dados{
+    display: grid;
+    font-family: 'Source Sans Pro', sans-serif;
+    align-items: center;
+    top:50%;
+    margin-left: 8vh;
+    grid-template-rows: auto;
+}
+
+p{
+    top:50%;
+}
+
+/* formatação do botão de editar */
+#edit{
+    display: none;
+    border: none;
+    background: none;
+    border-radius: 6px;
+    padding: 3px 5px 3px 5px;
+}
+
+#editar{
+    margin-left: 4vh;
+}
+
+#editIcon{
+    font-size: 1.5em;
+    margin-top: 2px;
+}
+
+#icon{
+    font-size: 1.5em;
+    margin-top: 20px;
+}
+
+#icon:hover{
+    transform: scale(1.3);
+}
+#username{
+    font-size: 1.5em;
+    
+}
+
+#block{
+    width: 50px;
+    height: 5vh;
+    background-color: black;
+}
+
+/* navbar */
+#btnLogout{
+    background:none;
+    border: none;
+}
+#navbarNavDropdown{
+    display: flex;
+    justify-content: space-between;
+}
+ #footer{
+    top: 100%;
+    position: absolute;
+    width: 100%;
+}
+
+
+.card-layout {
+    display: flex;
+    background-color: red;
+    /* Put a card in the next row when previous cards take all width */
+    flex-wrap: wrap;
+
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+}
+
+.card-layout__item {
+    /* There will be 3 cards per row */
+    flex-basis: 33.33333%;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+#favorites{
+
+    
+
+
+
+}
+
+
+@media screen and (max-width:992px) {
+    #container{
+        top: 50%;
+    }
+}
+
+@media screen and (max-width:600px) {
+    #dados{
+        margin-left: 1vh;
+    }
+
+    #container{
+        top: 50%;
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}
