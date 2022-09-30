@@ -58,6 +58,7 @@ app.use(flash())
 app.use((req,res,next)=>{
     res.locals.success_msg = req.flash("success_mgs")
     res.locals.error_msg = req.flash("error_mgs")
+    res.locals.warning_msg = req.flash("warning_mgs")
     next();
 }) 
 
@@ -200,7 +201,7 @@ app.post("/userSignup", async (req,res)=>{
                             if (err) throw err;
                             console.log("Usuário adicionado com sucesso");
                         });
-                        req.flash("success_mgs","Usuário Cadastrado com sucesso")
+                        req.flash("success_mgs","Usuário Cadastrado com sucesso, recarrege a página para esta mensagem desparecer")
                         res.redirect("/userPerfil")
                     }
                 })
@@ -228,7 +229,7 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
     if(format.test(req.file.originalname)){
 
         await unlinkAsync(`public/img/${req.file.originalname}`)
-        req.flash("error_mgs","Imagem fora do padrão permitido")
+        req.flash("error_mgs","Imagem fora do padrão permitido, ela não deve conter caracteres especiais e espaços, recarrege a página para esta mensagem desparecer")
         console.log("Imagem fora do padrão permitido")
         res.redirect("/userPerfil")
   
@@ -237,11 +238,11 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
         con.query(user, function (err, result) {
             if (err) throw err;
             if(result.length = 0){
-            req.flash("error_mgs","Erro ao atualizar foto de perfil")
+            req.flash("error_mgs","Erro ao atualizar foto de perfil, recarrege a página para esta mensagem desparecer")
             console.log("Erro ao salvar imagem")
             res.redirect("/userPerfil")
             }else{
-                req.flash("success_mgs","Foto de perfil atualizada")
+                req.flash("success_mgs","Foto de perfil atualizada, recarrege a página para esta mensagem desparecer")
                 console.log("Imagem salva com sucesso")
                 res.redirect("/userPerfil")
             }
@@ -284,7 +285,6 @@ app.post("/userLogin", async(req,res,next)=>{
         if(result.length > 0){
             localStorage.setItem('userEmail',req.body.email)
             let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
-            console.log(senha)
             if(senha){
                 res.redirect('/userPerfil')
             }else{
@@ -328,7 +328,7 @@ app.get("/userEdit", async(req,res)=>{
                 user_name: result[0].User_Name,
                 nome: result[0].Nome,
                 _id: result[0].Id,
-                script: "cadastroUsuario.js"
+                script: "mostrarSenhasEdit.js"
             })
           });
     }else{
@@ -462,6 +462,11 @@ app.post("/userEdit", async(req,res)=>{
                     }
                     if(senha == undefined && telefone == undefined && nome == undefined && username == undefined){
                         console.log("Nenhum dado alterado")
+                        req.flash("warning_mgs","Nenhum dado alterado, recarrege essa página para essa mensagem despararecer")
+                    }
+                    if(senha != undefined || telefone != undefined || nome != undefined || username != undefined){
+                        console.log("Dados alterados")
+                        req.flash("success_mgs","Dados alterados com sucesso, recarrege essa página para essa mensagem despararecer")
                     }
                     
                     res.redirect('/userPerfil')
@@ -473,7 +478,7 @@ app.post("/userEdit", async(req,res)=>{
                         nome: req.body.nome,
                         user_name: req.body.username,
                         telefone: req.body.telefone,
-                        script: "cadastroUsuario.js"
+                        script: "mostrarSenhasEdit.js"
                     })
                 }
         
@@ -485,5 +490,21 @@ app.post("/userEdit", async(req,res)=>{
 app.get("/logout",(req,res)=>{
     req.session.destroy();
     localStorage.removeItem('userEmail')
-    res.redirect("/userSignup")//Mudar para index depois
+    res.redirect("/userLogin")//Mudar para index depois
 })
+
+app.get('/search', function(req, res) {
+    res.render("search/search")
+    con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
+    function(err, rows, fields) {
+    if (err) throw err;
+    var data = [];
+    for (i = 0; i < rows.length; i++) {
+    data.push({username: rows.User_Name});
+    }
+            console.log(data)
+            res.render("search/search",{
+                data: data
+            })
+        });
+    });
