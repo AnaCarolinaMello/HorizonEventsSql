@@ -9,24 +9,46 @@ body{
 }
 
 #navbar{
-    position: absolute;
+    justify-content: space-between;
     width: 100%;
+    z-index: 1;
 }
 
-#container{
-    position: absolute;
-    height: auto;
-    width: 70%;
+#footer{
+    width: 100%;
+    z-index: 1;  
+  }
+
+#containerMain{
+    display: flex;
+    flex-direction: column;
+    min-height: 83.6vh;
+}
+
+#navbarNavDropdown{
+    justify-content: space-between;
+}
+
+#favoritos{
+    
+    width: 90%;
+    margin-top: 2vh;
+    margin: 2vh auto auto auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  #container{
+    margin: 2vh auto auto auto;
+
+    width: 90%;
     background-color: white;
     display: grid;
     grid-template-columns: 1fr 4fr 0.5fr;
     grid-template-rows: auto;
     border-radius: 6px;
-    top: 40%;
-    left: 50%;
-    transform: translate(-50%,-50%);
-    z-index: 2;
-}
+ }
 
 /* formataçao da área de exibição e seleção de imagem */
 #formImagem{
@@ -121,53 +143,22 @@ p{
     
 }
 
-#block{
-    width: 50px;
-    height: 5vh;
-    background-color: black;
-}
 
 /* navbar */
+#logout{ align-self: center;}
+
 #btnLogout{
     background:none;
     border: none;
+    
 }
-#navbarNavDropdown{
+
+#navmain{
+
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
 }
- #footer{
-    top: 100%;
-    position: absolute;
-    width: 100%;
-}
-
-
-.card-layout {
-    display: flex;
-    background-color: red;
-    /* Put a card in the next row when previous cards take all width */
-    flex-wrap: wrap;
-
-    margin-left: -0.25rem;
-    margin-right: -0.25rem;
-}
-
-.card-layout__item {
-    /* There will be 3 cards per row */
-    flex-basis: 33.33333%;
-    padding-left: 0.25rem;
-    padding-right: 0.25rem;
-}
-
-#favorites{
-
-    
-
-
-
-}
-
 
 @media screen and (max-width:992px) {
     #container{
