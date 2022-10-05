@@ -1,8 +1,6 @@
 
 const express = require('express');
 const route = express.Router()
-const { cadastroUser } = require("../controller/cadastroUserController");
-const business = require("../controller/buniness")
 
 route.get("/",  (req, res) => {
     res.render("home/index")
@@ -35,7 +33,7 @@ route.get("/userLoginPerfil", (req,res)=>{
 })
 
 route.get("/business/Signup", (req,res)=>{
-    res.render("business/businessPerfil",{
+    res.render("business/businessSignup",{
         title: "Entrar",
         style: "cadastroEmpresa.css",
         script: "businessSignup.js"
