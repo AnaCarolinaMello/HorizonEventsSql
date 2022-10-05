@@ -20,7 +20,8 @@ const oneDay = 1000 * 60 * 60 * 24
 const sessionStorage = require('sessionstorage-for-nodejs')
 const { promisify } = require('util')
 const unlinkAsync = promisify(fs.unlink)
-const cors = require('cors')
+const cors = require('cors');
+const { search } = require("./routes/route");
 
 app.use("/",route)
 
@@ -164,7 +165,7 @@ app.post("/userSignup", async (req,res)=>{
                             erros: erros,
                             nome_erro: req.body.nome,
                             telefone_erro: req.body.telefone,
-                            script: "cadastroUsuario.js"
+                            script: "userSignup.js"
                         })
                     }else{
                         res.render("user/cadastroUsuario",{
@@ -174,7 +175,7 @@ app.post("/userSignup", async (req,res)=>{
                             nome_erro: req.body.nome,
                             telefone_erro: req.body.telefone,
                             username_erro: req.body.username,
-                            script: "cadastroUsuario.js"
+                            script: "userSignup.js"
                         })
                     }
                 })      
@@ -189,7 +190,7 @@ app.post("/userSignup", async (req,res)=>{
                             nome_erro: req.body.nome,
                             telefone_erro: req.body.telefone,
                             email_erro: req.body.email,
-                            script: "cadastroUsuario.js"
+                            script: "userSignup.js"
                         })
                     }else{
                         const salt =await bcrypt.genSaltSync(10)
@@ -212,7 +213,7 @@ app.post("/userSignup", async (req,res)=>{
             title: "Cadastro",
             style: "cadastrousuario.css",
             erros: erros,
-            script: "cadastroUsuario.js",
+            script: "userSignup.js",
             nome_erro: req.body.nome,
             telefone_erro: req.body.telefone,
             username_erro: req.body.username,
@@ -264,7 +265,8 @@ app.get("/userPerfil", async (req,res)=>{
             email: email,
             usuario: result[0].User_Name,
             _id: result[0].Id,
-            fotoPerfil:  result[0].Foto_Perfil
+            fotoPerfil:  result[0].Foto_Perfil,
+            script: 'userPerfil.js'
         })
     })
     }else{
@@ -272,7 +274,8 @@ app.get("/userPerfil", async (req,res)=>{
         res.render("user/loginUsuario",{
             title: "Entrar",
             style: "loginUsuario.css",
-            erros: erros
+            erros: erros,
+            script: 'userLogin.js'
         })
     }
 })
@@ -293,7 +296,8 @@ app.post("/userLogin", async(req,res,next)=>{
                     title: "Entrar",
                     style: "loginUsuario.css",
                     erros: erros,
-                    emailErro: result[0].Email
+                    emailErro: result[0].Email,
+                    script: 'userLogin.js'
                 })
             }
         }else{
@@ -301,7 +305,8 @@ app.post("/userLogin", async(req,res,next)=>{
             res.render("user/loginUsuario",{
                 title: "Entrar",
                 style: "loginUsuario.css",
-                erros: erros
+                erros: erros,
+                script: 'userLogin.js'
         })
     }
 });
@@ -328,7 +333,7 @@ app.get("/userEdit", async(req,res)=>{
                 user_name: result[0].User_Name,
                 nome: result[0].Nome,
                 _id: result[0].Id,
-                script: "mostrarSenhasEdit.js"
+                script: "userEdit.js"
             })
           });
     }else{
@@ -478,7 +483,7 @@ app.post("/userEdit", async(req,res)=>{
                         nome: req.body.nome,
                         user_name: req.body.username,
                         telefone: req.body.telefone,
-                        script: "mostrarSenhasEdit.js"
+                        script: "userEdit.js"
                     })
                 }
         
@@ -494,17 +499,29 @@ app.get("/logout",(req,res)=>{
 })
 
 app.get('/search', function(req, res) {
-    res.render("search/search")
-    con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
-    function(err, rows, fields) {
-    if (err) throw err;
-    var data = [];
-    for (i = 0; i < rows.length; i++) {
-    data.push({username: rows.User_Name});
-    }
-            console.log(data)
-            res.render("search/search",{
-                data: data
-            })
-        });
+    res.render("search/search",{
+        style: "search.css",
+        title: "Pesquisar",
+        script: 'search.js'
+    })
+    // con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
+    // function(err, rows, fields) {
+    // if (err) throw err;
+    // var data = [];
+    // for (i = 0; i < rows.length; i++) {
+    // data.push({username: rows.User_Name});
+    // }
+    //         console.log(data)
+    //         res.render("search/search",{
+    //             data: data
+    //         })
+    //     });
     });
+
+app.post('/business/Signup',(req,res)=>{
+    res.render("business/perfilEmpresa",{
+        title: "Entrar",
+        style: "perfilBusiness.css",
+        script: "businessPerfil.js"
+    })
+})
