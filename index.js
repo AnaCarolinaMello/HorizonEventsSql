@@ -519,7 +519,7 @@ app.get('/search', function(req, res) {
     });
 
 app.post('/business/Signup',(req,res)=>{
-    res.render("business/perfilEmpresa",{
+    res.render("business/businessPerfil",{
         title: "Entrar",
         style: "perfilBusiness.css",
         script: "businessPerfil.js"
