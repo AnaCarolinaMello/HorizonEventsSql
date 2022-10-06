@@ -524,7 +524,7 @@ app.post('/business/Signup',(req,res)=>{
 
 app.get('/business/Perfil',(req,res)=>{
     res.render("business/businessPerfil",{
-        title: "Entrar",
+        title: "Perfil",
         style: "perfilBusiness.css",
         script: "businessPerfil.js"
     })
