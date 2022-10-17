@@ -7,7 +7,7 @@ route.get("/",  (req, res) => {
 })
 
 
-route.get("/userSignup", (req,res)=>{
+route.get("/user/Signup", (req,res)=>{
     res.render("user/cadastroUsuario",{
         title: "Cadastro",
         style: "cadastroUsuario.css",
@@ -15,7 +15,7 @@ route.get("/userSignup", (req,res)=>{
     })
 })
 
-route.get("/userLogin", (req,res)=>{
+route.get("/user/Login", (req,res)=>{
     res.render("user/loginUsuario",{
         title: "Entrar",
         style: "loginUsuario.css",
@@ -24,13 +24,9 @@ route.get("/userLogin", (req,res)=>{
 })
 
 route.get("/user/cadastroUsuario", (req,res)=>{
-    res.redirect("/userLogin")
+    res.redirect("/user/Login")
 })
 
-route.get("/userLoginPerfil", (req,res)=>{
-
-    res.redirect("/userLogin")
-})
 
 route.get("/business/Signup", (req,res)=>{
     res.render("business/businessSignup",{
