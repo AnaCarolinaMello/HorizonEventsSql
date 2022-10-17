@@ -35,14 +35,16 @@ app.use(express.static(path.join(__dirname, '/public')));
 app.use(express.static('/public'))
 
 //Middleware que é usado para manter o usuário logado
-app.use(session({
-    secret: "Algo",
-    saveUninitialized:true,
-    cookie: { maxAge: oneDay },
-    resave: true,
-    rolling: true
-}))
-
+if(!session.user){
+    app.use(session({
+        secret: "Algo",
+        saveUninitialized:true,
+        cookie: { maxAge: oneDay },
+        resave: true,
+        rolling: true
+    }))
+    
+}
 app.use(cookieParser());
 
 app.use(cors())
@@ -95,7 +97,7 @@ app.listen(port, err =>{
 // //Passando para uma variável o modelo da collection
 // const User_Cliente = mongoose.model("Usuario_Cliente")
 
-app.post("/userSignup", async (req,res)=>{
+app.post("/user/Signup", async (req,res)=>{
 
     // Array para mensagens de erros
     var erros = []
@@ -103,6 +105,8 @@ app.post("/userSignup", async (req,res)=>{
     var arroba = "@"
     // Variável para verificação de email
     var com = ".com"
+
+    let format = /[a-zA-Z]/
 
     //Verificação se a variável é vazia
     if(!req.body.nome || typeof req.body.nome == undefined || req.body.nome == null){
@@ -193,17 +197,44 @@ app.post("/userSignup", async (req,res)=>{
                             script: "userSignup.js"
                         })
                     }else{
-                        const salt =await bcrypt.genSaltSync(10)
-                        const senha = await req.body.senha
-                        let senhaFinal = bcrypt.hashSync(senha, salt)
-                        var sql = `INSERT INTO Usuario_Cliente (Nome, User_Name,Email,Telefone,Foto_Perfil,Senha) VALUES ('${req.body.nome}','${req.body.username}','${req.body.email}','${req.body.telefone}','/imgNative/profile.jpg','${senhaFinal}')`;
-                        localStorage.setItem('userEmail',req.body.email)
-                        con.query(sql, function (err, result) {
-                            if (err) throw err;
-                            console.log("Usuário adicionado com sucesso");
-                        });
-                        req.flash("success_mgs","Usuário Cadastrado com sucesso, recarrege a página para esta mensagem desparecer")
-                        res.redirect("/userPerfil")
+                        if(req.body.telefone){
+                            if(format.test(req.body.telefone)){
+                                erros.push({texto:"Telefone inválido"})
+                                res.render("user/cadastroUsuario",{
+                                    title: "Cadastro",
+                                    style: "cadastrousuario.css",
+                                    erros: erros,
+                                    nome_erro: req.body.nome,
+                                    username_erro: req.body.username,
+                                    email_erro: req.body.email,
+                                    script: "userSignup.js"
+                                })
+                            }else if(req.body.telefone<14){
+                                erros.push({texto:"Telefone inválido"})
+                                res.render("user/cadastroUsuario",{
+                                    title: "Cadastro",
+                                    style: "cadastrousuario.css",
+                                    erros: erros,
+                                    nome_erro: req.body.nome,
+                                    username_erro: req.body.username,
+                                    email_erro: req.body.email,
+                                    script: "userSignup.js"
+                                })
+                            }
+                        }else{
+                            const salt =await bcrypt.genSaltSync(10)
+                            const senha = await req.body.senha
+                            let senhaFinal = bcrypt.hashSync(senha, salt)
+                            var sql = `INSERT INTO Usuario_Cliente (Nome, User_Name,Email,Telefone,Foto_Perfil,Senha) VALUES ('${req.body.nome}','${req.body.username}','${req.body.email}','${req.body.telefone}','/imgNative/profile.jpg','${senhaFinal}')`;
+                            const sessao=req.session;
+                            sessao.user = req.body.email
+                            con.query(sql, function (err, result) {
+                                if (err) throw err;
+                                console.log("Usuário adicionado com sucesso");
+                            });
+                            req.flash("success_mgs","Usuário Cadastrado com sucesso, recarrege a página para esta mensagem desparecer")
+                            res.redirect("/user/Perfil")
+                        }
                     }
                 })
             }
@@ -223,7 +254,7 @@ app.post("/userSignup", async (req,res)=>{
 })
 
 // //Tentativa de dar um upload em imagens no banco de dados
-app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
+app.post("/user/upload/:id", upload.single('foto'), async(req,res,result)=>{
     var id = req.params.id
     var format = /[!@#$%^&*()_+\-=\[\]{};':"\\|,<>\/?]+/;
 
@@ -232,7 +263,7 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
         await unlinkAsync(`public/img/${req.file.originalname}`)
         req.flash("error_mgs","Imagem fora do padrão permitido, ela não deve conter caracteres especiais e espaços, recarrege a página para esta mensagem desparecer")
         console.log("Imagem fora do padrão permitido")
-        res.redirect("/userPerfil")
+        res.redirect("/user/Perfil")
   
     } else {
         var user = `UPDATE Usuario_Cliente SET Foto_Perfil= '/img/${req.file.originalname}' WHERE Id='${id}'`
@@ -241,20 +272,20 @@ app.post("/upload/:id", upload.single('foto'), async(req,res,result)=>{
             if(result.length = 0){
             req.flash("error_mgs","Erro ao atualizar foto de perfil, recarrege a página para esta mensagem desparecer")
             console.log("Erro ao salvar imagem")
-            res.redirect("/userPerfil")
+            res.redirect("/user/Perfil")
             }else{
                 req.flash("success_mgs","Foto de perfil atualizada, recarrege a página para esta mensagem desparecer")
                 console.log("Imagem salva com sucesso")
-                res.redirect("/userPerfil")
+                res.redirect("/user/Perfil")
             }
       });
         
     }
 })
 
-app.get("/userPerfil", async (req,res)=>{
+app.get("/user/Perfil", async (req,res)=>{
     let erros = []
-    let email = localStorage.getItem('userEmail')
+    let email = req.session.user
     if(email != null){
     let user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     con.query(user, function (err, result) {
@@ -281,15 +312,16 @@ app.get("/userPerfil", async (req,res)=>{
 })
 
 // //Rota de autentificação do login
-app.post("/userLogin", async(req,res,next)=>{
+app.post("/user/Login", async(req,res,next)=>{
     var erros = []
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.email}'`
     con.query(user, async function (err, result, fields) {
         if(result.length > 0){
-            localStorage.setItem('userEmail',req.body.email)
+            const sessao=req.session;
+            sessao.user = req.body.email
             let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
             if(senha){
-                res.redirect('/userPerfil')
+                res.redirect('/user/Perfil')
             }else{
                 erros.push({texto:"Senha incorreta"})
                 res.render("user/loginUsuario",{
@@ -313,9 +345,9 @@ app.post("/userLogin", async(req,res,next)=>{
 })
     
 
-app.get("/userEdit", async(req,res)=>{
+app.get("/user/Edit", async(req,res)=>{
 
-    let email = localStorage.getItem('userEmail')
+    let email = req.session.user
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     if(email){
         con.query(user, function (err, result) {
@@ -337,10 +369,10 @@ app.get("/userEdit", async(req,res)=>{
             })
           });
     }else{
-        res.redirect('/userSignup')//Mudar para index depois
+        res.redirect('/user/Signup')//Mudar para index depois
     }
 })
-app.post("/userEdit", async(req,res)=>{
+app.post("/user/Edit", async(req,res)=>{
 
     // Array para mensagens de erros
     var erros = []
@@ -349,13 +381,15 @@ app.post("/userEdit", async(req,res)=>{
     let telefone
     let senha
     let userTester = []
+    let teste = 0
+    let format = /[a-zA-Z]/
 
     if(req.body.senha != req.body.confirme_senha){
 
         erros.push({texto:"Senhas incompatíveis"})
     }
 
-    let email = localStorage.getItem('userEmail')
+    let email = req.session.user
     var user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     let testeUser = `SELECT* FROM Usuario_Cliente`
             con.query(testeUser, function (err, result) {
@@ -408,6 +442,16 @@ app.post("/userEdit", async(req,res)=>{
                 }else{
                     if(result[0].Telefone == req.body.telefone){
                         telefone = undefined
+                        teste = 1
+
+                    }if(format.test(req.body.telefone)){
+
+                        erros.push({texto:"Telefone inválido"})
+
+                    }else if(req.body.telefone<14){
+
+                        erros.push({texto:"Telefone inválido"})
+
                     }else{
                         telefone = req.body.telefone
                     }
@@ -469,12 +513,17 @@ app.post("/userEdit", async(req,res)=>{
                         console.log("Nenhum dado alterado")
                         req.flash("warning_mgs","Nenhum dado alterado, recarrege essa página para essa mensagem despararecer")
                     }
+                
                     if(senha != undefined || telefone != undefined || nome != undefined || username != undefined){
                         console.log("Dados alterados")
-                        req.flash("success_mgs","Dados alterados com sucesso, recarrege essa página para essa mensagem despararecer")
+                        if(teste == 1){
+                            req.flash("warning_mgs","Nenhum dado alterado, recarrege essa página para essa mensagem despararecer")
+                        }else{
+                            req.flash("success_mgs","Dados alterados com sucesso, recarrege essa página para essa mensagem despararecer")
+                        }
                     }
                     
-                    res.redirect('/userPerfil')
+                    res.redirect('/user/Perfil')
                 }else{
                     res.render("user/editarUsuario",{
                         title: "Editar Perfil",
@@ -494,8 +543,7 @@ app.post("/userEdit", async(req,res)=>{
 
 app.get("/logout",(req,res)=>{
     req.session.destroy();
-    localStorage.removeItem('userEmail')
-    res.redirect("/userLogin")//Mudar para index depois
+    res.redirect("/user/Login")//Mudar para index depois
 })
 
 app.get('/search', function(req, res) {
@@ -518,14 +566,171 @@ app.get('/search', function(req, res) {
     //     });
     });
 
-app.post('/business/Signup',(req,res)=>{
-    res.redirect('/business/Perfil')
+app.post('/business/Signup', async(req,res)=>{
+
+    var erros =[];
+    let format = /[a-zA-Z]/
+    if(!req.body.nomeFantasia || typeof req.body.nomeFantasia == undefined || req.body.nomeFantasia == null){
+        erros.push({texto:"Nome fantasia inválido"})
+    }
+
+    if(!req.body.razaoComercial || typeof req.body.razaoComercial == undefined || req.body.razaoComercial == null){
+        erros.push({texto:"Razão comercial inválida"})
+    }
+
+    if(!req.body.cnpj || typeof req.body.cnpj == undefined || req.body.cnpj == null || req.body.cnpj.leght > 18|| req.body.cnpj.leght < 18 || format.test(req.body.cnpj)){
+        erros.push({texto:"CNPJ inválido"})
+    }
+
+    if(!req.body.representante || typeof req.body.representante == undefined || req.body.representante == null){
+        erros.push({texto:"Representante inválido"})
+    }
+
+    if(!req.body.numero || typeof req.body.numero == undefined || req.body.numero == null){
+        erros.push({texto:"Número inválido"})
+    }
+
+    if(!req.body.rua || typeof req.body.rua == undefined || req.body.rua == null){
+        erros.push({texto:"Rua inválida"})
+    }
+
+    if(!req.body.cep || typeof req.body.cep == undefined || req.body.cep == null || req.body.cep.leght > 9 || req.body.cep.leght < 9 ||  format.test(req.body.cep)){
+        erros.push({texto:"CEP inválido"})
+    }
+
+    if(!req.body.senha || typeof req.body.senha == undefined || req.body.senha == null){
+        erros.push({texto:"Senha inválida"})
+
+    //Verificação se a variável tem menos de 32 caracteres
+    }else if(req.body.senha.length > 32){
+        erros.push({texto:"Senha precisa conter menos de 32 caracteres"})
+
+    //Verificação se a variável tem mais de 8 caractere 
+    }else if(req.body.senha.length < 8){
+        erros.push({texto:"Senha precisa conter 8 caracteres no mínimo"})
+    }
+
+    //Verificação se a variável é vazia
+    if(!req.body.confirme_senha || typeof req.body.confirme_senha == undefined || req.body.confirme_senha == null){
+        erros.push({texto:"Senha de confirmação inválida"})
+
+    //Verificação se a senha e sua confirmação batem
+    }else if(req.body.senha != req.body.confirme_senha){
+
+        erros.push({texto:"Senhas incompatíveis"})
+    }
+    if(erros.length == 0){
+        var cnpj = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.cnpj}'`
+        var razao = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.razaoComercial}'`
+        con.query(cnpj, (err, result)=>{
+            if(result.leght > 0){
+                erros.push({texto: 'CNPJ já cadastrado'})
+                con.query(razao, (err, resultado)=>{
+                    if(resultado.leght > 0){
+                        erros.push({texto: 'Razão comercial já cadastrada'})
+                        res.render("business/businessSignup",{
+                            title: "Entrar",
+                            style: "cadastroEmpresa.css",
+                            script: "businessSignup.js",
+                            erros: erros,
+                            nome_erro: req.body.nomeFantasia,
+                            representante_erro: req.body.representante,
+                            rua_erro: req.body.rua,
+                            numero_erro: req.body.numero,
+                            cep_erro: req.body.cep
+                        })
+                    }else{
+                        res.render("business/businessSignup",{
+                            title: "Entrar",
+                            style: "cadastroEmpresa.css",
+                            script: "businessSignup.js",
+                            erros: erros,
+                            nome_erro: req.body.nomeFantasia,
+                            representante_erro: req.body.representante,
+                            rua_erro: req.body.rua,
+                            numero_erro: req.body.numero,
+                            cep_erro: req.body.cep,
+                            razao_erro: req.body.razaoComercial
+                        })
+                    }
+                })
+            }else{
+                con.query(razao, async(err, resultado)=>{
+                    if(resultado.leght > 0){
+                        erros.push({texto: 'Razão comercial já cadastrada'})
+                        res.render("business/businessSignup",{
+                            title: "Entrar",
+                            style: "cadastroEmpresa.css",
+                            script: "businessSignup.js",
+                            erros: erros,
+                            nome_erro: req.body.nomeFantasia,
+                            representante_erro: req.body.representante,
+                            rua_erro: req.body.rua,
+                            numero_erro: req.body.numero,
+                            cep_erro: req.body.cep,
+                            cnpj_erro: req.body.cnpj
+                        })
+                    }else{
+                        const salt =await bcrypt.genSaltSync(10)
+                        const senha = await req.body.senha
+                        let senhaFinal = bcrypt.hashSync(senha, salt)
+                        var insertEmpresa = `INSERT INTO Empresa (CNPJ, Razao_Comercial, Nome_Fantasia, Representante, Numero, Rua, CEP, Foto_Perfil,Senha) VALUES ('${req.body.cnpj}','${req.body.razaoComercial}','${req.body.nomeFantasia}','${req.body.representante}','${req.body.numero}','${req.body.rua}','${req.body.cep}','/imgNative/profile.jpg','${senhaFinal}')`;
+                        const sessao=req.session;
+                        sessao.user = req.body.cnpj;
+                        con.query(insertEmpresa, function (err, result) {
+                            console.log("Empresa cadastrada")
+                        });
+                        req.flash("success_mgs","Usuário Cadastrado com sucesso, recarrege a página para esta mensagem desparecer")
+                        res.redirect('/business/Perfil')
+                    }
+                })
+            }
+        })
+        
+    }else{
+        res.render("business/businessSignup",{
+            title: "Entrar",
+            style: "cadastroEmpresa.css",
+            script: "businessSignup.js",
+            erros: erros,
+            nome_erro: req.body.nomeFantasia,
+            representante_erro: req.body.representante,
+            rua_erro: req.body.rua,
+            numero_erro: req.body.numero,
+            cep_erro: req.body.cep,
+            cnpj_erro: req.body.cnpj,
+            razao_erro: req.body.razaoComercial
+        })
+    }
+    
 })
 
 app.get('/business/Perfil',(req,res)=>{
-    res.render("business/businessPerfil",{
-        title: "Perfil",
-        style: "perfilBusiness.css",
-        script: "businessPerfil.js"
+    let erros = []
+    let cnpj = req.session.user
+    if(cnpj != null){
+    let user = `SELECT* FROM Empresa WHERE CNPJ='${cnpj}'`
+    con.query(user, function (err, result) {
+        if (err) throw err;
+        res.render("business/businessPerfil",{
+            title: "Perfil",
+            style: "perfilBusiness.css",
+            foto_perfil: result[0].Foto_Perfil,
+            nome: result[0].Nome_Fantasia,
+            razao: result[0].Razao_Comercial,
+            representante: result[0].Representante,
+            rua: result[0].Rua,
+            title: result[0].Nome_Fantasia,
+            script: "businessPerfil.js"
+        })
     })
+    }else{
+        erros.push({texto:"Erro insperado, entre novamente mais tarde"})
+        res.render("business/businessSignup",{
+            title: "Entrar",
+            style: "cadastroEmpresa.css",
+            script: "businessSignup.js",
+            erros: erros
+        })
+    }
 })
