@@ -284,20 +284,46 @@ app.post("/user/upload/:id", upload.single('foto'), async(req,res,result)=>{
 })
 
 app.get("/user/Perfil", async (req,res)=>{
+    localStorage.removeItem("search")
     let erros = []
+    let dados = []
     let email = req.session.user
     if(email != null){
     let user = `SELECT* FROM Usuario_Cliente WHERE Email='${email}'`
     con.query(user, function (err, result) {
-        if (err) throw err;
-        res.render("user/areaDoUsuario",{
-            title: result[0].User_Name,
-            style: "areaDoUsuario.css",
-            email: email,
-            usuario: result[0].User_Name,
-            _id: result[0].Id,
-            fotoPerfil:  result[0].Foto_Perfil,
-            script: 'userPerfil.js'
+        let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${result[0].Id}`
+        con.query(fav, async (err,favorito)=>{
+            if(favorito.length == 0){
+                res.render("user/areaDoUsuario",{
+                    title: result[0].User_Name,
+                    style: "areaDoUsuario.css",
+                    email: email,
+                    usuario: result[0].User_Name,
+                    _id: result[0].Id,
+                    fotoPerfil:  result[0].Foto_Perfil,
+                    script: 'userPerfil.js',
+                    dados: dados
+                })
+            }else{
+                favorito.forEach((value)=>{
+                    let business = `SELECT Id,Foto_Perfil,Nome_Fantasia,Rua,Numero FROM Empresa WHERE Id = ${value.Empresa_Id}`
+                    con.query(business, (err,getEmpresa)=>{
+                        getEmpresa.forEach((element)=>{
+                            dados.push({foto: element.Foto_Perfil, nome: element.Nome_Fantasia, rua: element.Rua, numero: element.Numero, id: element.Id})
+                        })
+                    })
+                })
+                await res.render("user/areaDoUsuario",{
+                    title: result[0].User_Name,
+                    style: "areaDoUsuario.css",
+                    email: email,
+                    usuario: result[0].User_Name,
+                    _id: result[0].Id,
+                    fotoPerfil:  result[0].Foto_Perfil,
+                    script: 'userPerfil.js',
+                    dados: dados
+                })
+            }
         })
     })
     }else{
@@ -546,12 +572,65 @@ app.get("/logout",(req,res)=>{
     res.redirect("/user/Login")//Mudar para index depois
 })
 
-app.get('/search', function(req, res) {
-    res.render("search/search",{
-        style: "search.css",
-        title: "Pesquisar",
-        script: 'search.js'
-    })
+app.get('/search', async (req, res)=> {
+    let erros = []
+        if(req.query.search){
+            let search = `SELECT Id,Foto_Perfil,Nome_Fantasia,Rua,Numero FROM Empresa WHERE Nome_Fantasia LIKE "%${req.query.search}%"`
+            con.query(search,(err,result)=>{
+                if(result.length > 0){
+                    localStorage.setItem("search",req.query.search)
+                    let enviar = []
+                    let email = req.session.user
+                    if(!email){
+                        localStorage.removeItem("search")
+                        req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                        res.redirect('/user/login')
+                    }else{
+                        let user = `SELECT Id from Usuario_Cliente WHERE Email = '${email}'`
+                        con.query(user,async (err,resultado)=>{
+                            if(resultado.length > 0){
+                                result.forEach((value)=>{
+                                    let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                                    con.query(fav,(err,favorito)=>{
+                                        if(favorito.length > 0){
+                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salve: "Salvo", id: value.Id})
+                                        }else{
+                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salve: "Salvar", id: value.Id})
+                                        }
+                                    })
+                                })
+                                await res.render("search/search",{
+                                    style: "search.css",
+                                    title: "Pesquisar",
+                                    script: 'search.js',
+                                    enviar: enviar
+                                })
+                            }else{
+                                localStorage.removeItem("search")
+                                erros.push({texto:"Erro insperado, entre novamente mais tarde"})
+                                req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                                res.redirect('/user/login')
+                            }
+                        })
+                    }
+                
+                }else{
+                    res.render("search/search",{
+                        style: "search.css",
+                        title: "Pesquisar",
+                        script: 'search.js',
+                        nofound: "Nehuma empresa encontrada"
+                    })
+                }
+            })
+        }else{
+            res.render("search/search",{
+                style: "search.css",
+                title: "Pesquisar",
+                script: 'search.js'
+            })
+        }
+    
     // con.query('SELECT User_name FROM Usuario_Cliente WHERE User_Name LIKE "%' + req.body.nome + '%"',
     // function(err, rows, fields) {
     // if (err) throw err;
@@ -566,6 +645,58 @@ app.get('/search', function(req, res) {
     //     });
     });
 
+app.post('/search', (req,res)=>{
+    let erros = []
+    let email = req.session.user
+    let searchTest = localStorage.getItem("search")
+    let search = `SELECT Id,Foto_Perfil,Nome_Fantasia,Rua,Numero FROM Empresa WHERE Nome_Fantasia LIKE "%${searchTest}%"`
+    con.query(search,(err,result)=>{
+        let user = `SELECT Id from Usuario_Cliente WHERE Email = '${email}'`
+        con.query(user,(err,resultado)=>{
+            if(resultado.length > 0){
+                result.forEach((value)=>{
+                    let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                    con.query(fav,(err,favorito)=>{
+                        if(favorito.length > 0){
+                            if(req.body.hasOwnProperty(value.Id)){
+                                let del = `DELETE FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                                con.query(del, (err, deletado)=>{
+                                    if(deletado.length == 0){
+                                        req.flash("error_mgs","Erro ao remover item dos favoritos, recarrege essa página para essa mensagem despararecer")
+                                        res.redirect("/search?search="+searchTest)
+                                    }else{
+                                        req.flash("success_mgs","Item removido dos favoritos, recarrege essa página para essa mensagem despararecer")
+                                        res.redirect("/search?search="+searchTest)
+                                    }
+                                })
+                            }
+                        }else{
+                            if(req.body.hasOwnProperty(value.Id)){
+                                let salve = `INSERT INTO Favoritos(Usuario_Id,Empresa_Id) VALUES (${resultado[0].Id},${value.Id})`
+                                con.query(salve, (err,salvo)=>{
+                                    console.log(salvo.affectedRow)
+                                    if(salvo.length == 0){
+                                        req.flash("error_mgs","Erro ao salvar aos favoritos, recarrege a página para esta mensagem desparecer")
+                                        res.redirect("/search?search="+searchTest)
+                                    }else{
+                                        req.flash("success_mgs","Salvo com sucesso, recarrege a página para esta mensagem desparecer")
+                                        res.redirect("/search?search="+searchTest)
+                                    }
+                                })
+                            }
+                        }
+                    })
+                })
+            }else{
+                localStorage.removeItem("search")
+                req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                res.redirect('/user/login')
+            }
+        })
+    })
+})
+
+
 app.post('/business/Signup', async(req,res)=>{
 
     var erros =[];
@@ -578,7 +709,7 @@ app.post('/business/Signup', async(req,res)=>{
         erros.push({texto:"Razão comercial inválida"})
     }
 
-    if(!req.body.cnpj || typeof req.body.cnpj == undefined || req.body.cnpj == null || req.body.cnpj.leght > 18|| req.body.cnpj.leght < 18 || format.test(req.body.cnpj)){
+    if(!req.body.cnpj || typeof req.body.cnpj == undefined || req.body.cnpj == null || req.body.cnpj.length > 18|| req.body.cnpj.length < 18 || format.test(req.body.cnpj)){
         erros.push({texto:"CNPJ inválido"})
     }
 
@@ -594,7 +725,7 @@ app.post('/business/Signup', async(req,res)=>{
         erros.push({texto:"Rua inválida"})
     }
 
-    if(!req.body.cep || typeof req.body.cep == undefined || req.body.cep == null || req.body.cep.leght > 9 || req.body.cep.leght < 9 ||  format.test(req.body.cep)){
+    if(!req.body.cep || typeof req.body.cep == undefined || req.body.cep == null || req.body.cep.length > 9 || req.body.cep.length < 9 ||  format.test(req.body.cep)){
         erros.push({texto:"CEP inválido"})
     }
 
@@ -623,10 +754,10 @@ app.post('/business/Signup', async(req,res)=>{
         var cnpj = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.cnpj}'`
         var razao = `SELECT* FROM Usuario_Cliente WHERE Email='${req.body.razaoComercial}'`
         con.query(cnpj, (err, result)=>{
-            if(result.leght > 0){
+            if(result.length > 0){
                 erros.push({texto: 'CNPJ já cadastrado'})
                 con.query(razao, (err, resultado)=>{
-                    if(resultado.leght > 0){
+                    if(resultado.length > 0){
                         erros.push({texto: 'Razão comercial já cadastrada'})
                         res.render("business/businessSignup",{
                             title: "Entrar",
@@ -656,7 +787,7 @@ app.post('/business/Signup', async(req,res)=>{
                 })
             }else{
                 con.query(razao, async(err, resultado)=>{
-                    if(resultado.leght > 0){
+                    if(resultado.length > 0){
                         erros.push({texto: 'Razão comercial já cadastrada'})
                         res.render("business/businessSignup",{
                             title: "Entrar",
