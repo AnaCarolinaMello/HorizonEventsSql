@@ -4,7 +4,7 @@ const app = express()
 const {engine} = require('express-handlebars')
 const bodyParser = require('body-parser')
 const path = require('path')
-const port = 3000;
+const port = 8080;
 const route = require("./routes/route") 
 const session = require('express-session')
 const flash = require('connect-flash')
@@ -593,9 +593,9 @@ app.get('/search', async (req, res)=> {
                                     let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
                                     con.query(fav,(err,favorito)=>{
                                         if(favorito.length > 0){
-                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salve: "Salvo", id: value.Id})
+                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salvo: "Salvo", id: value.Id})
                                         }else{
-                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salve: "Salvar", id: value.Id})
+                                            enviar.push({foto: value.Foto_Perfil, nome: value.Nome_Fantasia, rua: value.Rua, numero: value.Numero, salvar: "Salvar", id: value.Id})
                                         }
                                     })
                                 })
@@ -696,6 +696,114 @@ app.post('/search', (req,res)=>{
     })
 })
 
+app.get('/business/viewBusiness', (req,res)=>{
+
+    let getPerfil = `SELECT* FROM Empresa WHERE Id = ${req.query.business}`
+    let searchTest = localStorage.getItem("search")
+    let email = req.session.user
+    if(req.query.business){
+        con.query(getPerfil,(err,result)=>{
+            if(result.length > 0){
+                let user = `SELECT Id from Usuario_Cliente WHERE Email = '${email}'`
+                con.query(user,async (err,resultado)=>{
+                    if(resultado.length > 0){
+                        result.forEach((value)=>{
+                            let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                            con.query(fav,(err,favorito)=>{
+                                if(favorito.length > 0){
+                                    res.render("business/viewBusiness",{
+                                        title: result[0].Nome_Fantasia,
+                                        style: "viewBusiness.css",
+                                        script: "businessUser.js",
+                                        foto_perfil: result[0].Foto_Perfil,
+                                        rua: result[0].Rua,
+                                        numero: result[0].Numero,
+                                        id: result[0].Id,
+                                        email: result[0].Email,
+                                        telefone: result[0].Telefone,
+                                        salvo: "salvo"
+                                    })
+                                }else{
+                                    res.render("business/viewBusiness",{
+                                        title: result[0].Nome_Fantasia,
+                                        style: "viewBusiness.css",
+                                        script: "businessUser.js",
+                                        foto_perfil: result[0].Foto_Perfil,
+                                        rua: result[0].Rua,
+                                        numero: result[0].Numero,
+                                        id: result[0].Id,
+                                        email: result[0].Email,
+                                        telefone: result[0].Telefone,
+                                        salvar: "salvar"
+                                    })                                
+                                }
+                            })
+                        })
+                    }else{
+                        localStorage.removeItem("search")
+                        req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                        res.redirect('/user/login')
+                    }
+                })
+            }else{
+                req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                res.redirect("/search?search="+searchTest)
+            }
+        })
+    }else{
+        req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+        res.redirect("/search?search="+searchTest)
+     }
+})
+
+app.post('/business/viewBusiness', (req,res)=>{
+    let salve = `SELECT Id FROM Empresa  WHERE Id = ${req.query.business}`
+    let email = req.session.user
+    con.query(salve,(err,result)=>{
+        let user = `SELECT Id from Usuario_Cliente WHERE Email = '${email}'`
+        con.query(user,(err,resultado)=>{
+            if(resultado.length > 0){
+                result.forEach((value)=>{
+                    let fav = `SELECT* FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                    con.query(fav,(err,favorito)=>{
+                        if(favorito.length > 0){
+                            if(req.body.hasOwnProperty(value.Id)){
+                                let del = `DELETE FROM Favoritos WHERE Usuario_Id =${resultado[0].Id} AND Empresa_Id = ${value.Id}`
+                                con.query(del, (err, deletado)=>{
+                                    if(deletado.length == 0){
+                                        req.flash("error_mgs","Erro ao remover item dos favoritos, recarrege essa página para essa mensagem despararecer")
+                                        res.redirect("/business/viewBusiness?business="+value.Id)
+                                    }else{
+                                        req.flash("success_mgs","Item removido dos favoritos, recarrege essa página para essa mensagem despararecer")
+                                        res.redirect("/business/viewBusiness?business="+value.Id)
+                                    }
+                                })
+                            }
+                        }else{
+                            if(req.body.hasOwnProperty(value.Id)){
+                                let salve = `INSERT INTO Favoritos(Usuario_Id,Empresa_Id) VALUES (${resultado[0].Id},${value.Id})`
+                                con.query(salve, (err,salvo)=>{
+                                    console.log(salvo.affectedRow)
+                                    if(salvo.length == 0){
+                                        req.flash("error_mgs","Erro ao salvar aos favoritos, recarrege a página para esta mensagem desparecer")
+                                        res.redirect("/business/viewBusiness?business="+value.Id)
+                                    }else{
+                                        req.flash("success_mgs","Salvo com sucesso, recarrege a página para esta mensagem desparecer")
+                                        res.redirect("/business/viewBusiness?business="+value.Id)
+                                    }
+                                })
+                            }
+                        }
+                    })
+                })
+            }else{
+                localStorage.removeItem("search")
+                req.flash("error_mgs","Erro insperado, entre novamente mais tarde, recarrege a página para esta mensagem desparecer")
+                res.redirect('/user/login')
+            }
+        })
+    })
+})
 
 app.post('/business/Signup', async(req,res)=>{
 
@@ -864,4 +972,37 @@ app.get('/business/Perfil',(req,res)=>{
             erros: erros
         })
     }
+})
+
+
+app.post("/business/Login", async(req,res,next)=>{
+    var erros = []
+    var user = `SELECT* FROM Empresa WHERE CNPJ='${req.body.CNPJ}'`
+    con.query(user, async function (err, result, fields) {
+        if(result.length > 0){
+            const sessao=req.session;
+            sessao.user = req.body.CNPJ
+            let senha = await bcrypt.compare(req.body.senha, result[0].Senha)
+            if(senha){
+                res.redirect('/business/Perfil')
+            }else{
+                erros.push({texto:"Senha incorreta"})
+                res.render("business/businessLogin",{
+                    title: "Entrar",
+                    style: "businessLogin.css",
+                    erros: erros,
+                    cnpj_erro: result[0].CNPJ,
+                    script: 'businessLogin.js'
+                })
+            }
+        }else{
+            erros.push({texto:"Essa conta não existe"})
+            res.render("business/businessLogin",{
+                title: "Entrar",
+                style: "businessLogin.css",
+                erros: erros,
+                script: 'businessLogin.js'
+        })
+    }
+});
 })
