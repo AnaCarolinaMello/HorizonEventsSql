@@ -719,6 +719,7 @@ app.get('/business/viewBusiness', (req,res)=>{
                                         rua: result[0].Rua,
                                         numero: result[0].Numero,
                                         id: result[0].Id,
+                                        nome: result[0].Nome_Fantasia,
                                         email: result[0].Email,
                                         telefone: result[0].Telefone,
                                         salvo: "salvo"
@@ -732,6 +733,7 @@ app.get('/business/viewBusiness', (req,res)=>{
                                         rua: result[0].Rua,
                                         numero: result[0].Numero,
                                         id: result[0].Id,
+                                        nome: result[0].Nome_Fantasia,
                                         email: result[0].Email,
                                         telefone: result[0].Telefone,
                                         salvar: "salvar"
