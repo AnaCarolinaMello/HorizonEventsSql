@@ -97,6 +97,246 @@ app.listen(port, err =>{
 // //Passando para uma variável o modelo da collection
 // const User_Cliente = mongoose.model("Usuario_Cliente")
 
+app.get("/",  (req, res) => {
+    let getEmpresas = "SELECT* FROM Empresa"
+    let tamanho = []
+    con.query(getEmpresas, (err,result)=>{
+        if(result.length > 0){
+            let random = Math.floor(Math.random()*result.length)
+            let count = 0
+            result.forEach((value)=>{
+                tamanho.push(count)
+                count++
+            })
+            tamanho = tamanho.sort(()=>{
+                return Math.random() - 0.5;
+            });
+            if(result.length >= 6){
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        logar: "logar",
+                        style: "index.css",
+                        script: "index.js",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        imagem5: result[tamanho[4]].Foto_Perfil,
+                        imagem6: result[tamanho[5]].Foto_Perfil
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        logado: "logado",
+                        style: "index.css",
+                        script: "index.js",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        id2: result[tamanho[1]].Id,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        id3: result[tamanho[2]].Id,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        id4: result[tamanho[3]].Id,
+                        imagem5: result[tamanho[4]].Foto_Perfil,
+                        id5: result[tamanho[4]].Id,
+                        imagem6: result[tamanho[5]].Foto_Perfil,
+                        id6: result[tamanho[5]].Id
+                    })
+                }
+            }else if(result.length == 5){
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logar: "logar",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        imagem5: result[tamanho[4]].Foto_Perfil,
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logado: "logado",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        id2: result[tamanho[1]].Id,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        id3: result[tamanho[2]].Id,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        id4: result[tamanho[3]].Id,
+                        imagem5: result[tamanho[4]].Foto_Perfil,
+                        id5: result[tamanho[4]].Id,
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }
+            }else if(result.length === 4){
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logar: "logar",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logado: "logado",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        id2: result[tamanho[1]].Id,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        id3: result[tamanho[2]].Id,
+                        imagem4: result[tamanho[3]].Foto_Perfil,
+                        id4: result[tamanho[3]].Id,
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }
+            }else if(result.length == 3){
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logar: "logar",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logado: "logado",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        id2: result[tamanho[1]].Id,
+                        imagem3: result[tamanho[2]].Foto_Perfil,
+                        id3: result[tamanho[2]].Id,
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }
+            }else if(result.length == 2){
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logar: "logar",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        imagem3: "/imgNative/profile.jpg",
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logado: "logado",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: result[tamanho[1]].Foto_Perfil,
+                        id2: result[tamanho[1]].Id,
+                        imagem3: "/imgNative/profile.jpg",
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }
+            }else{
+                if(!req.session.user){
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logar: "logar",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        imagem2: "/imgNative/profile.jpg",
+                        imagem3: "/imgNative/profile.jpg",
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }else{
+                    res.render("home/index",{
+                        title: "Home",
+                        style: "index.css",
+                        script: "index.js",
+                        logado: "logado",
+                        imagem_destaque: result[random].Foto_Perfil,
+                        id: result[random].Id,
+                        imagem1: result[tamanho[0]].Foto_Perfil,
+                        id1: result[tamanho[0]].Id,
+                        imagem2: "/imgNative/profile.jpg",
+                        imagem3: "/imgNative/profile.jpg",
+                        imagem4: "/imgNative/profile.jpg",
+                        imagem5: "/imgNative/profile.jpg",
+                        imagem6: "/imgNative/profile.jpg"
+                    })
+                }
+            }
+        }else{
+            res.render("home/index",{
+                title: "Home",
+                style: "index.css",
+                script: "index.js",
+                logar: "logar",
+                imagem_destaque: "/imgNative/profile.jpg",
+                imagem1: "/imgNative/profile.jpg",
+                imagem2: "/imgNative/profile.jpg",
+                imagem3: "/imgNative/profile.jpg",
+                imagem4: "/imgNative/profile.jpg",
+                imagem5: "/imgNative/profile.jpg",
+                imagem6: "/imgNative/profile.jpg"
+            })
+        }
+    })
+})
+
 app.post("/user/Signup", async (req,res)=>{
 
     // Array para mensagens de erros
@@ -569,7 +809,7 @@ app.post("/user/Edit", async(req,res)=>{
 
 app.get("/logout",(req,res)=>{
     req.session.destroy();
-    res.redirect("/user/Login")//Mudar para index depois
+    res.redirect("/")
 })
 
 app.get('/search', async (req, res)=> {
@@ -946,6 +1186,35 @@ app.post('/business/Signup', async(req,res)=>{
     
 })
 
+app.post("/business/upload/:id", upload.single('foto'), async(req,res,result)=>{
+    var id = req.params.id
+    var format = /[!@#$%^&*()_+\-=\[\]{};':"\\|,<>\/?]+/;
+
+    if(format.test(req.file.originalname)){
+
+        await unlinkAsync(`public/img/${req.file.originalname}`)
+        req.flash("error_mgs","Imagem fora do padrão permitido, ela não deve conter caracteres especiais e espaços, recarrege a página para esta mensagem desparecer")
+        console.log("Imagem fora do padrão permitido")
+        res.redirect("/business/Perfil")
+  
+    } else {
+        var user = `UPDATE Empresa SET Foto_Perfil= '/img/${req.file.originalname}' WHERE Id='${id}'`
+        con.query(user, function (err, result) {
+            if (err) throw err;
+            if(result.length = 0){
+            req.flash("error_mgs","Erro ao atualizar foto de perfil, recarrege a página para esta mensagem desparecer")
+            console.log("Erro ao salvar imagem")
+            res.redirect("/business/Perfil")
+            }else{
+                req.flash("success_mgs","Foto de perfil atualizada, recarrege a página para esta mensagem desparecer")
+                console.log("Imagem salva com sucesso")
+                res.redirect("/business/Perfil")
+            }
+      });
+        
+    }
+})
+
 app.get('/business/Perfil',(req,res)=>{
     let erros = []
     let cnpj = req.session.user
@@ -956,6 +1225,7 @@ app.get('/business/Perfil',(req,res)=>{
         res.render("business/businessPerfil",{
             title: "Perfil",
             style: "perfilBusiness.css",
+            id: result[0].Id,
             foto_perfil: result[0].Foto_Perfil,
             nome: result[0].Nome_Fantasia,
             razao: result[0].Razao_Comercial,
