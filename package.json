@@ -23,7 +23,7 @@
     "mysql": "^2.18.1",
     "node": "^18.9.0",
     "node-sessionstorage": "^1.0.0",
-    "nodemon": "^2.0.19",
+    "nodemon": "^3.0.0",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "sessionstorage": "^0.0.2",
